@@ -17,22 +17,22 @@ class URI:
 		self.URI = uri
 		if not uri:
 			return
-		
+
 		temp = uri
 		temp = string.split(temp,"#")
 		if len(temp) > 1:
 			self.Anchor = temp[1]
 		temp = temp[0]
-		
+
 		temp = string.split(temp,"?")
 		if len(temp) > 1:
 			self.Parameter = temp[1]
 		temp = temp[0]
-		
+
 		temp = string.split(temp,"/")
 		if len(temp) > 1:
-			self.Filename = string.join(temp[len(temp)-1:])
-		temp = string.join(temp[:len(temp)-1],"/")
+			self.Filename = string.join(temp[-1:])
+		temp = string.join(temp[:-1], "/")
 
 		if temp[:7] == "http://":
 			self.Protocol = "http://"

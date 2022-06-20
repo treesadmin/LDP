@@ -97,22 +97,23 @@ class Section:				# <sect>
 	Documents = []
 
 	def loadDOM(self,dom):
-		if dom.nodeType == 1 and dom.nodeName == "sect":
-			for child in dom.childNodes:
-				if child.nodeType == 1:
-					if child.nodeName == "title":
-						self.Title = ""
-						for text in child.childNodes:
-							self.Title = self.Title + text.nodeValue
-					elif child.nodeName == "sect":
-						newSection = Section()
-						newSection.Level = self.Level + 1
-						newSection.loadDOM(child)
-						self.Sections = self.Sections + [newSection]
-					elif child.nodeName == "doc":
-						newDocument = Document()
-						newDocument.loadDOM(child)
-						self.Documents = self.Documents + [newDocument]
+		if dom.nodeType != 1 or dom.nodeName != "sect":
+			return
+		for child in dom.childNodes:
+			if child.nodeType == 1:
+				if child.nodeName == "title":
+					self.Title = ""
+					for text in child.childNodes:
+						self.Title = self.Title + text.nodeValue
+				elif child.nodeName == "sect":
+					newSection = Section()
+					newSection.Level = self.Level + 1
+					newSection.loadDOM(child)
+					self.Sections = self.Sections + [newSection]
+				elif child.nodeName == "doc":
+					newDocument = Document()
+					newDocument.loadDOM(child)
+					self.Documents = self.Documents + [newDocument]
 
 
 	def DocumentByID(self, docid):
@@ -121,7 +122,7 @@ class Section:				# <sect>
 				return document
 		for sect in self.Sections:
 			document = sect.DocumentByID(docid)
-			if not document == None:
+			if document is not None:
 				return document
 		return None
 	
@@ -135,7 +136,7 @@ class ContentList:			# <scrollkeepercontentlist>
 
 	def load(self):
 		self.Sections = []
-		cmd = "scrollkeeper-get-extended-content-list " + lang
+		cmd = f"scrollkeeper-get-extended-content-list {lang}"
 		filename = commands.getoutput(cmd)
 		dom = parse(filename)
 		self.loadDOM(dom.documentElement)
@@ -151,7 +152,7 @@ class ContentList:			# <scrollkeepercontentlist>
 	def DocumentByID(self, docid):
 		for sect in self.Sections:
 			document = sect.DocumentByID(docid)
-			if not document == None:
+			if document is not None:
 				return document
 		return None
 
