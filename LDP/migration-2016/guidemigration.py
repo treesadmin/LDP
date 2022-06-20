@@ -85,19 +85,15 @@ nag2/nag2.pdf
 sag/sag.pdf
 solrhe/Securing-Optimizing-Linux-RH-Edition-v1.3.pdf'''.split()
 
-extrapdfs = dict()
-extrapdfs['lkmpg/2.4/lkmpg.pdf'] = 'lkmpg-2.4'
-extrapdfs['lkmpg/2.6/lkmpg.pdf'] = 'lkmpg-2.6'
-extrapdfs['abs/abs-guide.pdf'] = 'abs-guide'
-extrapdfs['intro-linux/intro-linux.pdf'] = 'Intro-Linux'
+extrapdfs = {
+    'lkmpg/2.4/lkmpg.pdf': 'lkmpg-2.4',
+    'lkmpg/2.6/lkmpg.pdf': 'lkmpg-2.6',
+    'abs/abs-guide.pdf': 'abs-guide',
+    'intro-linux/intro-linux.pdf': 'Intro-Linux',
+}
 
 def validate_args(argv):
-    if len(argv) == 4:
-        for d in argv[:3]:
-            if not os.path.isdir(d):
-                return False
-        return True
-    return False
+    return all(os.path.isdir(d) for d in argv[:3]) if len(argv) == 4 else False
 
 
 def make_refresh(target, title, delay=0):
@@ -168,18 +164,18 @@ def guides(stems, guidepath, guidecompat, pubdir, urlbase):
     for pdf in pdflist:
         stem, _ = os.path.split(pdf)
         oldpdf = opj(guidecompat, pdf)
-        newpdf = opj(pubdir, stem, stem + '.pdf')
+        newpdf = opj(pubdir, stem, f'{stem}.pdf')
         assert os.path.exists(oldpdf)
         assert os.path.exists(newpdf)
-        os.rename(oldpdf, oldpdf + '.' + str(int(time.time())))
+        os.rename(oldpdf, f'{oldpdf}.{int(time.time())}')
         create_symlink(newpdf, oldpdf)
 
     for pdf, stem in extrapdfs.items():
         oldpdf = opj(guidecompat, pdf)
-        newpdf = opj(pubdir, stem, stem + '.pdf')
+        newpdf = opj(pubdir, stem, f'{stem}.pdf')
         assert os.path.exists(oldpdf)
         assert os.path.exists(newpdf)
-        os.rename(oldpdf, oldpdf + '.' + str(int(time.time())))
+        os.rename(oldpdf, f'{oldpdf}.{int(time.time())}')
         create_symlink(newpdf, oldpdf)
 
     for stem, newstem in sorted(stems.items(), key=lambda x: x[1].lower()):
@@ -193,13 +189,13 @@ def guides(stems, guidepath, guidecompat, pubdir, urlbase):
             pubpath = newhtmlfilename(pubdir, newstem, fn)
             url = pubpath.replace(pubdir, urlbase)
             fullname = opj(htmldir, fn)
-            os.rename(fullname, fullname + '.' + str(int(time.time())))
+            os.rename(fullname, f'{fullname}.{int(time.time())}')
             create_refresh_meta_equiv(fullname, url, newstem, delay=2)
 
 
 def main(fin, fout, argv):
     me = os.path.basename(sys.argv[0])
-    usage = "usage: %s <guidepath> <guidecompat> <pubdir> <urlbase>" % (me,)
+    usage = f"usage: {me} <guidepath> <guidecompat> <pubdir> <urlbase>"
     if not validate_args(argv):
         return usage
     guidepath, guidecompat, pubdir, urlbase = argv

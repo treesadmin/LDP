@@ -39,38 +39,32 @@ def parseConfig():
 	longArgs = []
 	for option in flatOptions.keys():
 		result[option] = None
-		if flatOptions[option][FUNC] == None:
+		if flatOptions[option][FUNC] is None:
 			longArgs.append(option)
 		else:
-			longArgs.append('%s=' % option)
-			
+			longArgs.append(f'{option}=')
+
 	# Now parse the command line.
 	optlist, args = getopt.getopt(sys.argv[1:], '', longArgs)
 	for opt, value in optlist:
 		# Strip off the leading '--' from the option
 		opt = opt[2:]
-		func = flatOptions[opt][FUNC]
-		if func:
-			result[opt] = func(value)
-		else:
-			result[opt] = 1
+		result[opt] = func(value) if (func := flatOptions[opt][FUNC]) else 1
 	# It only makes sense to ask for help on the commandline, so we show it
 	# here and return immediately.
 	if result['help'] == 1:
 		showHelp()
 		return result
-	
-	# Look in the file in $SCROLLSERVER_CONFIG.
-	filename = os.environ.get('SCROLLSERVER_CONFIG')
-	if filename:
+
+	if filename := os.environ.get('SCROLLSERVER_CONFIG'):
 		processConfigFile(filename, result)
-	
+
 	# Look in the default config file.
 	processConfigFile(defaultConfigFile, result)
 
 	# And, finally, use the default values for anything not yet filled in.
 	for option, value in result.items():
-		if value == None:
+		if value is None:
 			result[option] = flatOptions[option][DEFAULT]
 	return result
 
@@ -94,11 +88,7 @@ def processConfigFile(filename, dict):
 			if result[option] != None or not cp.has_option(section, option):
 				continue
 			value = cp.get(section, option)
-			func = flatOptions[option][FUNC]
-			if func:
-				dict[option] = func(value)
-			else:
-				dict[option] = 1
+			dict[option] = func(value) if (func := flatOptions[option][FUNC]) else 1
 
 def cacheSize(param):
 	"""
@@ -110,7 +100,7 @@ def cacheSize(param):
 	multipliers = {'k': 1024, 'm': 1024 * 1024, 'g': 1024 * 1024 * 1024}
 	param = param.strip()
 	suffix = param[-1].lower()
-	if suffix in multipliers.keys():
+	if suffix in multipliers:
 		mult = multipliers[suffix]
 		param = param[:-1]
 	else:

@@ -39,23 +39,17 @@ INTRO/Virus-INTRO'''.split()
 
 
 def validate_args(argv):
-    if len(argv) == 4:
-        for d in argv[:3]:
-            if not os.path.isdir(d):
-                return False
-        return True
-    return False
+    return all(os.path.isdir(d) for d in argv[:3]) if len(argv) == 4 else False
 
 
 def collect_published_stems(dirbase):
-    d = dict()
-    for stem in os.listdir(dirbase):
-        if not os.path.isdir(opj(dirbase, stem)):
-            continue
-        d[stem] = stem
     # add_renamed_stems(d)
     # add_skipped_stems(d)
-    return d
+    return {
+        stem: stem
+        for stem in os.listdir(dirbase)
+        if os.path.isdir(opj(dirbase, stem))
+    }
 
 
 def make_refresh(target, title, delay=0):
@@ -131,13 +125,13 @@ def refs(stems, refpath, refcompat, pubdir, urlbase):
             sys.exit(1)
 
         # -- PDF handling
-        newpdf = opj(pubdir, stem, stem + '.pdf')
-        oldpdf = opj(refcompat, doc + '.pdf')
+        newpdf = opj(pubdir, stem, f'{stem}.pdf')
+        oldpdf = opj(refcompat, f'{doc}.pdf')
         if not os.path.exists(oldpdf):
-            oldpdf = opj(refcompat, stem, stem + '.pdf')
+            oldpdf = opj(refcompat, stem, f'{stem}.pdf')
         assert os.path.exists(oldpdf)
         assert os.path.exists(newpdf)
-        os.rename(oldpdf, oldpdf + '.' + str(int(time.time())))
+        os.rename(oldpdf, f'{oldpdf}.{int(time.time())}')
         create_symlink(newpdf, oldpdf)
 
         # -- HTML handling
@@ -151,13 +145,13 @@ def refs(stems, refpath, refcompat, pubdir, urlbase):
             pubpath = newhtmlfilename(pubdir, stem, fn)
             url = pubpath.replace(pubdir, urlbase)
             fullname = opj(htmldir, fn)
-            os.rename(fullname, fullname + '.' + str(int(time.time())))
+            os.rename(fullname, f'{fullname}.{int(time.time())}')
             create_refresh_meta_equiv(fullname, url, stem, delay=2)
 
 
 def main(fin, fout, argv):
     me = os.path.basename(sys.argv[0])
-    usage = "usage: %s <refpath> <refcompat> <pubdir> <urlbase>" % (me,)
+    usage = f"usage: {me} <refpath> <refcompat> <pubdir> <urlbase>"
     if not validate_args(argv):
         return usage
     refpath, refcompat, pubdir, urlbase = argv

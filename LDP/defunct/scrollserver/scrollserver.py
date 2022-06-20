@@ -38,8 +38,7 @@ class RequestHandler(BaseClass):
 	Intercepts the HTTP requests and serves them.
 	"""
 	def do_GET(self):
-		fd = self.send_head()
-		if fd:
+		if fd := self.send_head():
 			shutil.copyfileobj(fd, self.wfile)
 			fd.close()
 	
@@ -51,7 +50,7 @@ class RequestHandler(BaseClass):
 		"""
 		Send the requested page.
 		"""
-		if self.path == "" or self.path == "/" or self.path == "/index.html":
+		if self.path in ["", "/", "/index.html"]:
 			return self.send_Home()
 		elif self.path == "/controls.html":
 			return self.send_Controls()
@@ -63,11 +62,11 @@ class RequestHandler(BaseClass):
 			return self.send_DocList()
 		elif self.path == "/help.html":
 			return self.send_Help()
-			
+
 		else:			# If not an internal page, it is a document or an
 					#   image file being requested.
 			uri = URI(self.path)
-		
+
 					# Serve a document
 			if uri.Filename == "docid":
 				return self.send_DocumentByID(uri.Parameter)
@@ -79,46 +78,70 @@ class RequestHandler(BaseClass):
 		"""
 		Send home page.
 		"""
-		FileCache ("", htmlbase+ "index.html", "xsltproc " + xsltparam + " stylesheets/index.xsl stylesheets/index.xsl > " + htmlbase + "index.html")
-		return self.send_File(htmlbase + "index.html")
+		FileCache(
+		    "",
+		    f"{htmlbase}index.html",
+		    f"xsltproc {xsltparam} stylesheets/index.xsl stylesheets/index.xsl > {htmlbase}index.html",
+		)
+		return self.send_File(f"{htmlbase}index.html")
 			
 	def send_Help(self):
 		"""
 		Send help page.
 		"""
-		FileCache ("", htmlbase+ "help.html", "xsltproc " + xsltparam + " stylesheets/help.xsl stylesheets/help.xsl > " + htmlbase + "help.html")
-		return self.send_File(htmlbase + "help.html")
+		FileCache(
+		    "",
+		    f"{htmlbase}help.html",
+		    f"xsltproc {xsltparam} stylesheets/help.xsl stylesheets/help.xsl > {htmlbase}help.html",
+		)
+		return self.send_File(f"{htmlbase}help.html")
 			
 	def send_Controls(self):
 		"""
 		Send controls page.
 		"""
-		FileCache ("", htmlbase + "controls.html", "xsltproc " + xsltparam + " stylesheets/controls.xsl stylesheets/controls.xsl > " + htmlbase + "controls.html")
-		return self.send_File(htmlbase + "controls.html")
+		FileCache(
+		    "",
+		    f"{htmlbase}controls.html",
+		    f"xsltproc {xsltparam} stylesheets/controls.xsl stylesheets/controls.xsl > {htmlbase}controls.html",
+		)
+		return self.send_File(f"{htmlbase}controls.html")
 
 	def send_Reset(self):
 		"""
 		Reset cache and send reset page.
 		"""
-		os.system("rm -rf " + htmlbase + "*")
-		FileCache ("", htmlbase + "reset.html", "xsltproc " + xsltparam + " stylesheets/reset.xsl stylesheets/reset.xsl > " + htmlbase + "reset.html")
-		return self.send_File(htmlbase + "reset.html")
+		os.system(f"rm -rf {htmlbase}*")
+		FileCache(
+		    "",
+		    f"{htmlbase}reset.html",
+		    f"xsltproc {xsltparam} stylesheets/reset.xsl stylesheets/reset.xsl > {htmlbase}reset.html",
+		)
+		return self.send_File(f"{htmlbase}reset.html")
 
 	def send_ContentsList(self):
 		"""
 		Send table of contents.
 		"""
-		contents_list = commands.getoutput("scrollkeeper-get-content-list " + lang)
-		FileCache (contents_list, htmlbase + "contents.html", "xsltproc " + xsltparam + " stylesheets/contents.xsl " + contents_list + " > " + htmlbase + "contents.html")
-		return self.send_File(htmlbase + "contents.html")
+		contents_list = commands.getoutput(f"scrollkeeper-get-content-list {lang}")
+		FileCache(
+		    contents_list,
+		    f"{htmlbase}contents.html",
+		    f"xsltproc {xsltparam} stylesheets/contents.xsl {contents_list} > {htmlbase}contents.html",
+		)
+		return self.send_File(f"{htmlbase}contents.html")
 
 	def send_DocList(self):
 		"""
 		Send alphabetical document list.
 		"""
-		contents_list = commands.getoutput("scrollkeeper-get-content-list " + lang)
-		FileCache (contents_list, htmlbase + "documents.html", "xsltproc " + xsltparam + " stylesheets/documents.xsl " + contents_list + " > " + htmlbase + "documents.html")
-		return self.send_File(htmlbase + "documents.html")
+		contents_list = commands.getoutput(f"scrollkeeper-get-content-list {lang}")
+		FileCache(
+		    contents_list,
+		    f"{htmlbase}documents.html",
+		    f"xsltproc {xsltparam} stylesheets/documents.xsl {contents_list} > {htmlbase}documents.html",
+		)
+		return self.send_File(f"{htmlbase}documents.html")
 
 	def send_DocumentByID(self, docid):
 		"""
@@ -128,37 +151,32 @@ class RequestHandler(BaseClass):
 		if not document:
 			text = "Error: ScrollServer couldn't find document number " + docid
 			return self.send_Text(text)
-		
+
 					# Determine files and paths to read and write
 		xmlfile = document.SourceFile
 		xmlpath =  os.path.dirname(xmlfile)
 		htmlpath = htmlbase + docid
-		htmlfile = htmlpath + "/index.html"
+		htmlfile = f"{htmlpath}/index.html"
 
-					#  Uncomment to debug file and path problems
-#		print "xmlpath:" + xmlpath
-#		print "htmlpath:" + htmlpath
-#		print "htmlfile:" + htmlfile
-#		print "xmlfile:" + xmlfile
-#		print "format:" + document.Format
+		FileCache("", htmlpath, f"mkdir {htmlpath}")
 
-					# The directory must exist
-		FileCache ("", htmlpath, "mkdir " + htmlpath)
-
-					# Process DocBook SGML files (other formats fail)
 		if document.Format == "text/sgml":
-			FileCache (xmlfile, htmlfile, "xsltproc --docbook " + xsltparam + " " + dbxslfile + " " + xmlfile + " > " + htmlfile)
+			FileCache(
+			    xmlfile,
+			    htmlfile,
+			    f"xsltproc --docbook {xsltparam} {dbxslfile} {xmlfile} > {htmlfile}",
+			)
 
-					# Symbolic links to the files in source directory
-					#   Required for efficient subsequent image requests
-		os.system("ln -s --target-directory=" + htmlpath + " " + xmlpath + "/*")
+						# Symbolic links to the files in source directory
+						#   Required for efficient subsequent image requests
+		os.system(f"ln -s --target-directory={htmlpath} {xmlpath}/*")
 		return self.send_File(htmlfile)
 
 	def send_URI(self, uri):
 		"""
 		Send some external file or image request.
 		"""
-		filename = uri.Path + "/" + uri.Filename
+		filename = f"{uri.Path}/{uri.Filename}"
 		if os.path.isfile(filename):
 			return self.send_File(filename)
 
@@ -170,7 +188,7 @@ class RequestHandler(BaseClass):
 			filename = htmlbase + document.ID + "/" + uri.Path + "/" + uri.Filename
 			return self.send_File(filename)
 		else:
-			text = "Unrecognized request: " + uri.Filename
+			text = f"Unrecognized request: {uri.Filename}"
 			return self.send_Text(text)
 
 	def send_File(self, filename):
@@ -184,25 +202,25 @@ class RequestHandler(BaseClass):
 		if len(temp) > 1:
 			fileext = temp[1]
 		else:
-			if os.path.isfile(filename + ".png"):
+			if os.path.isfile(f"{filename}.png"):
 				fileext = "png"
-			elif os.path.isfile(filename + ".jpeg"):
+			elif os.path.isfile(f"{filename}.jpeg"):
 				fileext = "jpeg"
-			if os.path.isfile(filename + ".jpg"):
+			if os.path.isfile(f"{filename}.jpg"):
 				fileext = "jpg"
-			if os.path.isfile(filename + ".gif"):
+			if os.path.isfile(f"{filename}.gif"):
 				fileext = "gif"
 			if fileext:
-				filename += "." + fileext
-		
-					# Determine mimetype from extension
-		if fileext == "html" or fileext == "htm":
+				filename += f".{fileext}"
+				
+							# Determine mimetype from extension
+		if fileext in ["html", "htm"]:
 			mimetype = "text/html"
 		elif fileext == "png":
 			mimetype = "image/png"
 		elif fileext == "gif":
 			mimetype = "image/gif"
-		elif fileext == "jpg" or fileext == "jpeg":
+		elif fileext in ["jpg", "jpeg"]:
 			mimetype = "image/jpeg"
 		elif fileext == "css":
 			mimetype = "text/css"
@@ -218,7 +236,7 @@ class RequestHandler(BaseClass):
 			self.send_header("Content-length", filesize)
 			self.end_headers()
 			return fd
-		return self.send_Text("Unrecognized file: " + filename)
+		return self.send_Text(f"Unrecognized file: {filename}")
 
 	
 	def send_Text(self, text):

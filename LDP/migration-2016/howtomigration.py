@@ -70,23 +70,19 @@ def add_skipped_stems(stems):
 
 
 def collect_published_stems(dirbase):
-    d = dict()
-    for stem in os.listdir(dirbase):
-        if not os.path.isdir(opj(dirbase, stem)):
-            continue
-        d[stem] = stem
+    d = {
+        stem: stem
+        for stem in os.listdir(dirbase)
+        if os.path.isdir(opj(dirbase, stem))
+    }
+
     add_renamed_stems(d)
     add_skipped_stems(d)
     return d
 
 
 def validate_args(argv):
-    if len(argv) == 4:
-        for d in argv[:3]:
-            if not os.path.isdir(d):
-                return False
-        return True
-    return False
+    return all(os.path.isdir(d) for d in argv[:3]) if len(argv) == 4 else False
 
 
 def walk_simple(stems, dirbase, root):
@@ -161,9 +157,9 @@ def walk_html_chunked_files(stems, dirbase, root):
             continue
         if stem not in stems:
             stem = '-'.join(stem.split('-')[:-1])
-            if stem not in stems:
-                logger.error("Could not determine stem for %s", fname)
-                continue
+        if stem not in stems:
+            logger.error("Could not determine stem for %s", fname)
+            continue
         relpath = opr(fname, start=root)
         newstem = stems.get(stem, None)
         if newstem is None:
@@ -194,7 +190,7 @@ def htmld(stem, relpath, pubdir, newtree):
 
 
 def htmls(stem, relpath, pubdir, newtree):
-    pubf = opj(pubdir, stem, stem + '-single.html')
+    pubf = opj(pubdir, stem, f'{stem}-single.html')
     newf = opj(newtree, relpath)
     if os.path.exists(pubf):
         return stem, relpath, newf, pubf
@@ -203,7 +199,7 @@ def htmls(stem, relpath, pubdir, newtree):
 
 
 def txt(stem, relpath, pubdir, newtree):
-    pubf = opj(pubdir, stem, stem + '.txt')
+    pubf = opj(pubdir, stem, f'{stem}.txt')
     newf = opj(newtree, relpath)
     if os.path.exists(pubf):
         return stem, relpath, newf, pubf
@@ -212,7 +208,7 @@ def txt(stem, relpath, pubdir, newtree):
 
 
 def pdf(stem, relpath, pubdir, newtree):
-    pubf = opj(pubdir, stem, stem + '.pdf')
+    pubf = opj(pubdir, stem, f'{stem}.pdf')
     newf = opj(newtree, relpath)
     if os.path.exists(pubf):
         return stem, relpath, newf, pubf
@@ -259,10 +255,10 @@ def create_refresh_meta_equiv(fname, url, stem, **kwargs):
 
 
 def howtos(stems, howtopath, newtree, pubdir, urlbase):
-    ldptree = dict()
-    for s, r in walk_html_chunked_files(stems, howtopath, howtopath):
-        ldptree[r] = htmlf(s, r, pubdir, newtree)
-        # print('chunked_files', s, r)
+    ldptree = {
+        r: htmlf(s, r, pubdir, newtree)
+        for s, r in walk_html_chunked_files(stems, howtopath, howtopath)
+    }
 
     for s, r in walk_html_chunked_dirs(stems, howtopath, howtopath):
         ldptree[r] = htmld(s, r, pubdir, newtree)
@@ -295,7 +291,7 @@ def howtos(stems, howtopath, newtree, pubdir, urlbase):
 
 def main(fin, fout, argv):
     me = os.path.basename(sys.argv[0])
-    usage = "usage: %s <howtopath> <howtocompat> <pubdir> <urlbase>" % (me,)
+    usage = f"usage: {me} <howtopath> <howtocompat> <pubdir> <urlbase>"
     if not validate_args(argv):
         return usage
     howtopath, howtocompat, pubdir, urlbase = argv
